@@ -33,7 +33,7 @@ func constructURL(repo string) string {
 	if repo == "" {
 		return base // Open profile if no repo is provided
 	}
-	return fmt.Sprintf("%s/%s", base, repo) // Open repo if provided
+	return fmt.Sprintf("%s/%s", base, repo) // Or open repo if provided
 }
 
 // openBrowser opens the specified URL in the default browser
