@@ -12,30 +12,40 @@ import (
 
 const configFileName = ".gog_config"
 
-// getConfigFilePath returns the path to the config file where the GitHub username is stored.
+// getConfigFilePath returns the path to the config file where the GitHub username and shortcuts are stored.
 func getConfigFilePath() string {
 	homeDir, _ := os.UserHomeDir()
 	return filepath.Join(homeDir, configFileName)
 }
 
-// readUsernameFromFile reads the GitHub username from the config file.
-func readUsernameFromFile() (string, error) {
+// readConfig reads the GitHub username and shortcuts from the config file.
+func readConfig() (string, map[string]string, error) {
 	configFilePath := getConfigFilePath()
 	file, err := os.Open(configFilePath)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	defer file.Close()
 
+	var username string
+	shortcuts := make(map[string]string)
 	scanner := bufio.NewScanner(file)
-	if scanner.Scan() {
-		return scanner.Text(), nil
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "username=") {
+			username = strings.TrimPrefix(line, "username=")
+		} else if strings.Contains(line, "=") {
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				shortcuts[parts[0]] = parts[1]
+			}
+		}
 	}
-	return "", fmt.Errorf("no username found")
+	return username, shortcuts, nil
 }
 
-// writeUsernameToFile writes the GitHub username to the config file.
-func writeUsernameToFile(username string) error {
+// writeConfig writes the GitHub username and shortcuts to the config file.
+func writeConfig(username string, shortcuts map[string]string) error {
 	configFilePath := getConfigFilePath()
 	file, err := os.Create(configFilePath)
 	if err != nil {
@@ -43,8 +53,13 @@ func writeUsernameToFile(username string) error {
 	}
 	defer file.Close()
 
-	_, err = file.WriteString(username)
-	return err
+	if username != "" {
+		_, _ = file.WriteString("username=" + username + "\n")
+	}
+	for key, value := range shortcuts {
+		_, _ = file.WriteString(key + "=" + value + "\n")
+	}
+	return nil
 }
 
 // promptUsername prompts the user to enter a GitHub username.
@@ -57,27 +72,48 @@ func promptUsername() string {
 
 func main() {
 	var username string
+	var shortcuts map[string]string
 	var err error
 
-	// Check if the user wants to update the username
+	// Check if the user wants to update the username or set a shortcut
 	if len(os.Args) > 1 && os.Args[1] == "-u" && len(os.Args) > 2 {
 		newUsername := os.Args[2]
-		err = writeUsernameToFile(newUsername)
+		username, shortcuts, err = readConfig()
+		if err != nil {
+			username, shortcuts = "", make(map[string]string)
+		}
+		username = newUsername
+		err = writeConfig(username, shortcuts)
 		if err != nil {
 			fmt.Println("Error saving username:", err)
 			return
 		}
 		fmt.Println("GitHub username updated successfully.")
 		return
+	} else if len(os.Args) > 1 && os.Args[1] == "-s" && len(os.Args) > 3 {
+		key := os.Args[2]
+		value := os.Args[3]
+		username, shortcuts, err = readConfig()
+		if err != nil {
+			username, shortcuts = "", make(map[string]string)
+		}
+		shortcuts[key] = value
+		err = writeConfig(username, shortcuts)
+		if err != nil {
+			fmt.Println("Error saving shortcut:", err)
+			return
+		}
+		fmt.Println("Shortcut added successfully.")
+		return
 	}
 
-	// Try to read the username from the config file
-	username, err = readUsernameFromFile()
-	if err != nil {
+	// Try to read the username and shortcuts from the config file
+	username, shortcuts, err = readConfig()
+	if err != nil || username == "" {
 		fmt.Println("No GitHub username found.")
 		// Prompt the user to enter a GitHub username
 		username = promptUsername()
-		err = writeUsernameToFile(username)
+		err = writeConfig(username, shortcuts)
 		if err != nil {
 			fmt.Println("Error saving username:", err)
 			return
@@ -85,14 +121,24 @@ func main() {
 		fmt.Println("GitHub username saved successfully.")
 	}
 
-	// Use the username to construct the URL
-	var repo string
+	// Handle repository or shortcut arguments
+	var url string
 	if len(os.Args) > 1 {
-		repo = os.Args[1]
+		if len(os.Args) == 2 {
+			// Check if it's a shortcut
+			if val, exists := shortcuts[os.Args[1]]; exists {
+				url = fmt.Sprintf("https://github.com/%s", val)
+			} else {
+				url = constructURL(username, os.Args[1])
+			}
+		} else {
+			// Multiple arguments for custom user/repo
+			url = fmt.Sprintf("https://github.com/%s/%s", os.Args[1], os.Args[2])
+		}
 	} else {
-		repo = ""
+		// Default to the user's profile
+		url = fmt.Sprintf("https://github.com/%s", username)
 	}
-	url := constructURL(username, repo)
 
 	// Open the URL in the default browser
 	err = openBrowser(url)
