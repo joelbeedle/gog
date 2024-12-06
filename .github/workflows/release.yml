@@ -23,7 +23,7 @@ jobs:
 
       # 3. Install semantic-release
       - name: Install semantic-release
-        run: npm install -g semantic-release @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/changelog
+        run: npm install -g semantic-release @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/changelog @semantic-release/git
 
       # 4. Run semantic-release
       - name: Run semantic-release
