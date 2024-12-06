@@ -1,36 +1,32 @@
 name: Release
+
 on:
   push:
     branches:
-      - main # or main
-
-permissions:
-  contents: read # for checkout
+      - main
 
 jobs:
   release:
-    name: Release
+    name: Semantic Release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # to be able to publish a GitHub release
-      issues: write # to be able to comment on released issues
-      pull-requests: write # to be able to comment on released pull requests
-      id-token: write # to enable use of OIDC for npm provenance
+
     steps:
-      - name: Checkout
+      # 1. Checkout the code
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Setup Node.js
+
+      # 2. Install Node.js (to run semantic-release)
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
-      - name: Install dependencies
-        run: npm clean-install
-      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
-        run: npm audit signatures
-      - name: Release
+          node-version: 18
+
+      # 3. Install semantic-release
+      - name: Install semantic-release
+        run: npm install -g semantic-release @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator
+
+      # 4. Run semantic-release
+      - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
+        run: semantic-release
