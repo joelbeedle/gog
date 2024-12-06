@@ -15,18 +15,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Install Node.js (to run semantic-release)
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Run Semantic Release
+        uses: cycjimmy/semantic-release-action@v3
         with:
-          node-version: 18
-
-      # 3. Install semantic-release
-      - name: Install semantic-release
-        run: npm install -g semantic-release @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator
-
-      # 4. Run semantic-release
-      - name: Run semantic-release
+          semantic_version: 22.0.12
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: semantic-release
