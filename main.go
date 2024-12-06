@@ -4,14 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
-	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
 )
 
-// promptUsername prompts the user to enter a GitHub username.
+// Prompts the user to enter a GitHub username.
 func promptUsername() string {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your GitHub username: ")
@@ -25,7 +23,6 @@ func main() {
 		Short: "GitHub CLI tool for quickly opening repositories and profiles",
 		Args:  cobra.MaximumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			// Default behavior: Handle repository or shortcut arguments
 			username, shortcuts, _ := readConfig()
 			var url string
 			if len(args) == 1 {
@@ -46,7 +43,6 @@ func main() {
 		},
 	}
 
-	// Add `set-username` command
 	setUsernameCmd := &cobra.Command{
 		Use:   "set-username [username]",
 		Short: "Set your GitHub username",
@@ -63,7 +59,6 @@ func main() {
 		},
 	}
 
-	// Add `add-shortcut` command
 	addShortcutCmd := &cobra.Command{
 		Use:   "add-shortcut [key] [repo]",
 		Short: "Add a shortcut for a repository",
@@ -84,36 +79,8 @@ func main() {
 
 	rootCmd.AddCommand(setUsernameCmd, addShortcutCmd)
 
-	// Execute the root command
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-// constructURL builds the URL based on the repository or defaults to the user's profile
-func constructURL(username, repo string) string {
-	base := fmt.Sprintf("https://github.com/%s", username)
-	if repo == "" {
-		return base // Open profile if no repo is provided
-	}
-	return fmt.Sprintf("%s/%s", base, repo) // Open repo if provided
-}
-
-// openBrowser opens the specified URL in the default browser
-func openBrowser(url string) error {
-	var cmd *exec.Cmd
-
-	switch runtime.GOOS {
-	case "linux":
-		cmd = exec.Command("xdg-open", url)
-	case "windows":
-		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
-	case "darwin":
-		cmd = exec.Command("open", url)
-	default:
-		return fmt.Errorf("unsupported platform")
-	}
-
-	return cmd.Start()
 }
