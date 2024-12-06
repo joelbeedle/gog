@@ -15,6 +15,28 @@ func getConfigFilePath() string {
 	return filepath.Join(homeDir, configFileName)
 }
 
+func getConfig() ([]string, error) {
+	configFilePath := getConfigFilePath()
+	file, err := os.Open(configFilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var content []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		content = append(content, line)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return content, nil
+}
+
 // readConfig reads the GitHub username and shortcuts from the config file.
 func readConfig() (string, map[string]string, error) {
 	configFilePath := getConfigFilePath()

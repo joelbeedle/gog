@@ -77,7 +77,23 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(setUsernameCmd, addShortcutCmd)
+	getConfigCmd := &cobra.Command{
+		Use:   "get-config",
+		Short: "Gets the contents of the config file",
+		Run: func(cmd *cobra.Command, args []string) {
+			configContents, err := getConfig()
+			if err != nil {
+				fmt.Println("Error getting config:", err)
+				return
+			}
+
+			for i, line := range configContents {
+				fmt.Printf("%d: %s\n", i+1, line)
+			}
+		},
+	}
+
+	rootCmd.AddCommand(setUsernameCmd, addShortcutCmd, getConfigCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
