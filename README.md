@@ -10,7 +10,7 @@ go to GitHub in go
 
 ## Usage
 
-```sh
+```text
 GitHub CLI tool for quickly opening repositories and profiles
 
 Usage:
@@ -28,14 +28,4 @@ Flags:
   -h, --help   help for gog
 
 Use "gog [command] --help" for more information about a command.
-```
-
-```sh
-go build -o gog
-sudo mv gog /usr/local/bin
-gog
-```
-
-```sh
-gog -u {new_username}
 ```
